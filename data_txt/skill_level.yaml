@@ -195,7 +195,7 @@
   skill_level: 15
   tech_cat:
     - Tools
-
+# remove later
 - tech_name: Email
   tech_logo: https://www.svgrepo.com/show/491226/email.svg
   project_site: mailto:darkicewolf50@gmail.com
