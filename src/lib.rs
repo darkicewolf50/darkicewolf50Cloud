@@ -1,5 +1,6 @@
-use actix_web::{HttpRequest, Responder, get, web};
+use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
 // use actix_web::{HttpResponse, post};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fs;
@@ -112,6 +113,30 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
     web::Json(res_vec)
 }
 
+// a successful version of a webhook
+// #[get("/test_reqwest")]
+// pub async fn test_reqwest(req: HttpRequest) -> impl Responder {
+//     log_incoming(req, "GET", "/test_reqwest");
+//     let json_to_send = serde_json::json!({
+//       "content": "Hey, from Rust, welcome to <:discohook:736648398081622016> **Discohook**! The easiest way to personalise your Discord server.\n\nThere's more info below, but you don't have to read it. If you're ready press **Clear All** in the top of the editor to get started.\n\nDiscohook has a [support server](https://discohook.app/discord), if you need help feel free to join in and ask questions, suggest features, or just chat with the community.\n\nWe also have [complementary bot](https://discohook.app/bot) that may help out, featuring reaction roles and other utilities.\n_ _"
+//     });
+
+//     let json_to_send = serde_json::to_string(&json_to_send).unwrap();
+
+//     let client = Client::new();
+//     let res = client
+//         .post("https://discord.com/api/webhooks/1369370183541461072/tuO93OJvdUsDzbHMBwHtQex11ijpfYLZMOvMov84eUPH5or3ziU03aOUmTZkfuibdhUp")
+//         .header("Content-Type", "application/json")
+//         .body(json_to_send)
+//         .send()
+//         .await;
+//     match res {
+//         Ok(response) => println!("Success: {:#?}", response),
+//         Err(e) => eprintln!("Error sending request: {}", e),
+//     }
+//     HttpResponse::Ok().body("Hello there!\nGeneral Kenobi")
+// }
+
 // #[cfg(test)]
 // mod tests {
 //     use super::*;
@@ -120,5 +145,6 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
 //     fn it_works() {
 //         let result = add(2, 2);
 //         assert_eq!(result, 4);
+//         test_reqwest();
 //     }
 // }
