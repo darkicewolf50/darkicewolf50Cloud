@@ -114,6 +114,7 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
 }
 
 // a successful version of a webhook
+// now the more idiomatic way of sending a json
 // #[get("/test_reqwest")]
 // pub async fn test_reqwest(req: HttpRequest) -> impl Responder {
 //     log_incoming(req, "GET", "/test_reqwest");
@@ -121,13 +122,13 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
 //       "content": "Hey, from Rust, welcome to <:discohook:736648398081622016> **Discohook**! The easiest way to personalise your Discord server.\n\nThere's more info below, but you don't have to read it. If you're ready press **Clear All** in the top of the editor to get started.\n\nDiscohook has a [support server](https://discohook.app/discord), if you need help feel free to join in and ask questions, suggest features, or just chat with the community.\n\nWe also have [complementary bot](https://discohook.app/bot) that may help out, featuring reaction roles and other utilities.\n_ _"
 //     });
 
-//     let json_to_send = serde_json::to_string(&json_to_send).unwrap();
+//     // let json_to_send = serde_json::to_string(&json_to_send).unwrap();
 
 //     let client = Client::new();
 //     let res = client
 //         .post("https://discord.com/api/webhooks/1369370183541461072/tuO93OJvdUsDzbHMBwHtQex11ijpfYLZMOvMov84eUPH5or3ziU03aOUmTZkfuibdhUp")
-//         .header("Content-Type", "application/json")
-//         .body(json_to_send)
+//         // .header("Content-Type", "application/json")
+//         .json(&json_to_send)
 //         .send()
 //         .await;
 //     match res {
