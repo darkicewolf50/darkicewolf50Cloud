@@ -112,6 +112,15 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
     web::Json(res_vec)
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+struct BlogContent {
+    pub blog_file_name: String,
+    pub date_last_edit: String,
+    pub blog_title: String,
+    pub tags: Vec<String>,
+    pub html_blog_content: String,
+}
+
 // {how_many} how_many: {}  how_many,
 #[get("/blog/{blog_name}")]
 pub async fn get_blog(
@@ -120,9 +129,42 @@ pub async fn get_blog(
     req: HttpRequest,
 ) -> impl Responder {
     log_incoming(req, "GET", "/blogs/blog/{blog_name}");
-    let blog = fs::read_to_string(format!("./data_txt/{blog_name}.md")).unwrap_or("".to_string());
-    let html_blog = comrak::markdown_to_html(&blog, &comrak::Options::default());
-    HttpResponse::Ok().body(html_blog)
+    let blog_name = blog_name.into_inner();
+    let file_path = format!("./data_txt/blogs/{blog_name}.md");
+    let path = Path::new(&file_path);
+
+    let Ok(blog_text) = fs::read_to_string(&path) else {
+        return web::Json(BlogContent {
+            blog_file_name: String::new(),
+            date_last_edit: "9999-12-01".to_string(),
+            blog_title: "Not Found".to_string(),
+            tags: vec!["#error".to_string()],
+            html_blog_content: "<p>Blog not found</p>".to_string(),
+        });
+    };
+    let mut blog_lines = blog_text.lines();
+
+    let raw_title = blog_lines.next().unwrap_or("").trim();
+    let blog_title = raw_title
+        .strip_prefix("# ")
+        .unwrap_or(raw_title)
+        .to_string();
+    //consumes empty line
+    blog_lines.next();
+    let tag_line = blog_lines.next().unwrap_or("").trim().to_string();
+    let tags = tag_line.split_whitespace().map(|s| s.to_string()).collect();
+    let markdown_content: String = blog_lines.collect::<Vec<_>>().join("\n");
+    let html_blog = comrak::markdown_to_html(&markdown_content, &comrak::Options::default());
+    let date_last_edit = get_date_modified(path).unwrap_or_else(|| "".to_string());
+
+    web::Json(BlogContent {
+        blog_file_name: blog_name,
+        blog_title: blog_title,
+        tags: tags,
+        html_blog_content: html_blog,
+        date_last_edit: date_last_edit,
+    })
+    // HttpResponse::Ok().body(html_blog)
 }
 
 #[derive(Deserialize, Serialize, Debug)]
