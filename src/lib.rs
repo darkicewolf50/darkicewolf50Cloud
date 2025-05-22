@@ -42,7 +42,7 @@ struct TechDes {
 #[get("/skills")]
 pub async fn skills_home(req: HttpRequest) -> impl Responder {
     log_incoming(req, "GET", "/skills");
-    let raw_yaml: String = fs::read_to_string("./data_txt/skill_level.yaml").unwrap();
+    let raw_yaml: String = fs::read_to_string("/database/skill_level.yaml").unwrap();
     // .expect("Cannot open file or missing file.");
     let vec_yaml = yaml_rust2::YamlLoader::load_from_str(&raw_yaml).unwrap()[0].clone();
 
@@ -82,7 +82,7 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
 
     let limit = limit.into_inner();
 
-    let raw_yaml: String = fs::read_to_string("./data_txt/projects.yaml").unwrap();
+    let raw_yaml: String = fs::read_to_string("/database/projects.yaml").unwrap();
     let vec_yaml = yaml_rust2::YamlLoader::load_from_str(&raw_yaml).unwrap()[0].clone();
 
     let raw_vec: Vec<ProjectDes> = vec_yaml
@@ -130,7 +130,7 @@ pub async fn get_blog(
 ) -> impl Responder {
     log_incoming(req, "GET", "/blogs/blog/{blog_name}");
     let blog_name = blog_name.into_inner();
-    let file_path = format!("./data_txt/blogs/{blog_name}.md");
+    let file_path = format!("/blogs/{}.md", blog_name);
     let path = Path::new(&file_path);
 
     let Ok(blog_text) = fs::read_to_string(&path) else {
@@ -180,7 +180,7 @@ pub async fn get_blogs_preview(props: web::Path<(u8, u32)>, req: HttpRequest) ->
     let (num_limit, page_num) = props.into_inner();
 
     let mut available_blogs: Vec<String> = Vec::new();
-    let dir = Path::new("./data_txt/blogs");
+    let dir = Path::new("/blogs");
     if dir.is_dir() {
         for entry in fs::read_dir(dir).unwrap() {
             let entry = entry

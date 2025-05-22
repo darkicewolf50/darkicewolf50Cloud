@@ -1,0 +1,11 @@
+services:
+  bajacloud:
+    container_name: darkicewolf50cloud
+    image: darkicewolf50/darkicewolf50cloud:latest
+    # restart: unless-stopped
+    build: . # do not include in delpoyment version
+    ports:
+      - 5050:8000
+    volumes:
+      - ./database:/database
+      - ./blogs:/blogs
