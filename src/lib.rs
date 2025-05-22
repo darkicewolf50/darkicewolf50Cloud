@@ -1,4 +1,5 @@
-use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
+use actix_web::{HttpRequest, Responder, get, web};
+// use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{fs, path::Path};
@@ -62,7 +63,6 @@ pub async fn skills_home(req: HttpRequest) -> impl Responder {
                 .collect(),
         })
         .collect();
-    // println!("{:#?}", res_vec[2]);
     web::Json(res_vec)
 }
 
@@ -149,10 +149,17 @@ pub async fn get_blog(
         .strip_prefix("# ")
         .unwrap_or(raw_title)
         .to_string();
+
     //consumes empty line
     blog_lines.next();
-    let tag_line = blog_lines.next().unwrap_or("").trim().to_string();
-    let tags = tag_line.split_whitespace().map(|s| s.to_string()).collect();
+    let tags = blog_lines
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_string()
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect();
     let markdown_content: String = blog_lines.collect::<Vec<_>>().join("\n");
     let html_blog = comrak::markdown_to_html(&markdown_content, &comrak::Options::default());
     let date_last_edit = get_date_modified(path).unwrap_or_else(|| "".to_string());
@@ -164,14 +171,6 @@ pub async fn get_blog(
         html_blog_content: html_blog,
         date_last_edit: date_last_edit,
     })
-    // HttpResponse::Ok().body(html_blog)
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct BlogPreview {
-    pub blog_file_name: String,
-    pub date_last_edit: String,
-    pub html_preview: String,
 }
 
 #[get("/{num_limit}/{page_num}")]
@@ -202,34 +201,44 @@ pub async fn get_blogs_preview(props: web::Path<(u8, u32)>, req: HttpRequest) ->
 
     let end = end.min(available_blogs.len());
     let blogs_to_get = &available_blogs[start..end];
-    let mut blogs_preview: Vec<BlogPreview> = Vec::new();
+    let mut blogs_preview: Vec<BlogContent> = Vec::new();
 
     for blog_info in blogs_to_get {
         let path = dir.join(blog_info);
 
         let date_last_edit = get_date_modified(&path).unwrap();
 
-        let blog = fs::read_to_string(&path).unwrap_or("".to_string());
-        let raw_blog = blog
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .take(3)
-            .collect::<Vec<_>>()
-            .join("\n");
-        let html_blog = comrak::markdown_to_html(&raw_blog, &comrak::Options::default());
+        let raw_blog_string = fs::read_to_string(&path).unwrap_or("".to_string());
+        let mut raw_blog = raw_blog_string.lines();
 
-        blogs_preview.push(BlogPreview {
-            blog_file_name: blog_info.to_string(),
+        let raw_title = raw_blog.next().unwrap_or("").trim();
+        let title = raw_title
+            .strip_prefix("# ")
+            .unwrap_or(raw_title)
+            .to_string();
+        raw_blog.next();
+        let tags = raw_blog
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string()
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect();
+        raw_blog.next();
+        let raw_blog_preview = format!("{}...", raw_blog.next().unwrap_or(""));
+        let blog_preview = comrak::markdown_to_html(&raw_blog_preview, &comrak::Options::default());
+
+        blogs_preview.push(BlogContent {
+            blog_file_name: blog_info.strip_suffix(".md").unwrap().to_string(),
             date_last_edit: date_last_edit,
-            html_preview: html_blog,
+            blog_title: title,
+            tags: tags,
+            html_blog_content: blog_preview,
         });
     }
 
-    // println!("{:?}", blogs_preview);
-    // web::Json(serde_json::json!(
-    //     { "Hello there!": "General Kenobi", "Available in dir": format!("{:?}",blogs_to_get) }
-    // ))
-    web::Json(serde_json::json!({ "Blogs": blogs_preview }))
+    web::Json(serde_json::json!(blogs_preview))
 }
 
 fn get_date_modified(path: &Path) -> Option<String> {
