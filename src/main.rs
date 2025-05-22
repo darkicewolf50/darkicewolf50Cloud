@@ -6,7 +6,7 @@ use darkicewolf50_cloud::{get_blog, get_blogs_preview, hello, project, skills_ho
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Running on port 8000");
+    println!("Running on port 5050");
     HttpServer::new(|| {
         App::new()
             .wrap(
@@ -31,7 +31,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::scope("/home").service(skills_home))
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind(("0.0.0.0", 5050))?
     .run()
     .await
 }
