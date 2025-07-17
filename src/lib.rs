@@ -71,6 +71,8 @@ struct ProjectDes {
     project_name: String,
     website_link: String,
     github_link: String,
+    gitea_link: String,
+    dockerhub_link: String,
     project_img: String,
     techs_used: Vec<String>,
     project_des: String,
@@ -93,6 +95,8 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
             project_name: item["project_name"].as_str().unwrap_or("").to_string(),
             website_link: item["website_link"].as_str().unwrap_or("").to_string(),
             github_link: item["github_link"].as_str().unwrap_or("").to_string(),
+            gitea_link: item["gitea_link"].as_str().unwrap_or("").to_string(),
+            dockerhub_link: item["dockerhub_link"].as_str().unwrap_or("").to_string(),
             project_img: item["project_img"].as_str().unwrap_or("").to_string(),
             techs_used: item["techs_used"]
                 .as_vec()
