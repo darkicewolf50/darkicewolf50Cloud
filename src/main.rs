@@ -1,7 +1,9 @@
 use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
 
-use darkicewolf50_cloud::{get_blog, get_blogs_preview, hello, project, skills_home};
+use darkicewolf50_cloud::{
+    get_blog, get_blogs_preview, get_experince, hello, project, skills_home,
+};
 // use darkicewolf50_cloud:: {echo, manual_hello, resend,};
 
 #[actix_web::main]
@@ -29,7 +31,11 @@ async fn main() -> std::io::Result<()> {
                     .service(get_blog)
                     .service(get_blogs_preview),
             )
-            .service(web::scope("/home").service(skills_home))
+            .service(
+                web::scope("/home")
+                    .service(skills_home)
+                    .service(get_experince),
+            )
     })
     .bind(("0.0.0.0", 5050))?
     .run()

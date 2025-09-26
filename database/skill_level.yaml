@@ -78,6 +78,7 @@
   tech_logo: https://nextjs.org/favicon.ico
   project_site: https://nextjs.org
   skill_level: 10
+  tech_cat:
     - Frontend
 - tech_name: Sqlite
   tech_logo: https://www.svgrepo.com/show/374094/sqlite.svg

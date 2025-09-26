@@ -2,6 +2,7 @@ use actix_web::{HttpRequest, Responder, get, web};
 // use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use serde_yaml_bw;
 use std::{fs, path::Path};
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
 
@@ -44,36 +45,19 @@ pub async fn skills_home(req: HttpRequest) -> impl Responder {
     log_incoming(req, "GET", "/skills");
     let raw_yaml: String = fs::read_to_string("/database/skill_level.yaml").unwrap();
     // .expect("Cannot open file or missing file.");
-    let vec_yaml = yaml_rust2::YamlLoader::load_from_str(&raw_yaml).unwrap()[0].clone();
+    let vec_yaml: Vec<TechDes> = serde_yaml_bw::from_str(&raw_yaml).unwrap_or_else(|_| vec![]);
 
-    let res_vec: Vec<TechDes> = vec_yaml
-        .as_vec()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|item| TechDes {
-            tech_name: item["tech_name"].as_str().unwrap_or("").to_string(),
-            tech_logo: item["tech_logo"].as_str().unwrap_or("").to_string(),
-            project_site: item["project_site"].as_str().unwrap_or("").to_string(),
-            skill_level: item["skill_level"].as_i64().unwrap_or(0) as u8,
-            tech_cat: item["tech_cat"]
-                .as_vec()
-                .unwrap_or(&vec![])
-                .iter()
-                .filter_map(|item_cat| item_cat.as_str().map(|inner_cat| inner_cat.to_string()))
-                .collect(),
-        })
-        .collect();
-    web::Json(res_vec)
+    web::Json(vec_yaml)
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 struct ProjectDes {
     project_name: String,
-    website_link: String,
-    github_link: String,
-    forgejo_link: String,
-    dockerhub_link: String,
-    project_img: String,
+    website_link: Option<String>,
+    github_link: Option<String>,
+    forgejo_link: Option<String>,
+    dockerhub_link: Option<String>,
+    project_img: Option<String>,
     techs_used: Vec<String>,
     project_des: String,
 }
@@ -85,32 +69,12 @@ pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responde
     let limit = limit.into_inner();
 
     let raw_yaml: String = fs::read_to_string("/database/projects.yaml").unwrap();
-    let vec_yaml = yaml_rust2::YamlLoader::load_from_str(&raw_yaml).unwrap()[0].clone();
+    let vec_yaml: Vec<ProjectDes> = serde_yaml_bw::from_str(&raw_yaml).unwrap_or_else(|_| vec![]);
 
-    let raw_vec: Vec<ProjectDes> = vec_yaml
-        .as_vec()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|item| ProjectDes {
-            project_name: item["project_name"].as_str().unwrap_or("").to_string(),
-            website_link: item["website_link"].as_str().unwrap_or("").to_string(),
-            github_link: item["github_link"].as_str().unwrap_or("").to_string(),
-            forgejo_link: item["forgejo_link"].as_str().unwrap_or("").to_string(),
-            dockerhub_link: item["dockerhub_link"].as_str().unwrap_or("").to_string(),
-            project_img: item["project_img"].as_str().unwrap_or("").to_string(),
-            techs_used: item["techs_used"]
-                .as_vec()
-                .unwrap_or(&vec![])
-                .iter()
-                .filter_map(|item_str| item_str.as_str().map(|inner_item| inner_item.to_string()))
-                .collect(),
-            project_des: item["project_des"].as_str().unwrap_or("").to_string(),
-        })
-        .collect();
-    let res_vec: Vec<ProjectDes> = if limit == 0 || limit >= raw_vec.len() {
-        raw_vec
+    let res_vec: Vec<ProjectDes> = if limit == 0 || limit >= vec_yaml.len() {
+        vec_yaml
     } else {
-        raw_vec[..limit].to_vec()
+        vec_yaml[..limit].to_vec()
     };
 
     web::Json(res_vec)
@@ -165,7 +129,13 @@ pub async fn get_blog(
         .map(|s| s.to_string())
         .collect();
     let markdown_content: String = blog_lines.collect::<Vec<_>>().join("\n");
-    let html_blog = comrak::markdown_to_html(&markdown_content, &comrak::Options::default());
+
+    // Allow, images and embeds
+    let mut options = comrak::ComrakOptions::default();
+    options.parse.smart = true;
+    options.render.unsafe_ = true;
+
+    let html_blog = comrak::markdown_to_html(&markdown_content, &options);
     let date_last_edit = get_date_modified(path).unwrap_or_else(|| "".to_string());
 
     web::Json(BlogContent {
@@ -267,3 +237,39 @@ fn get_date_modified(path: &Path) -> Option<String> {
 //         test_reqwest();
 //     }
 // }
+
+#[derive(Debug, Deserialize)]
+struct TypeExp {
+    #[serde(rename = "EXPERIENCE_JOBS")]
+    experience_jobs: Vec<ExpDes>,
+    #[serde(rename = "EXPERIENCE_VOL")]
+    experience_vol: Vec<ExpDes>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ExpDes {
+    pub postition: String,
+    pub company: String,
+    pub location: String,
+    pub start_month: String,
+    pub end_month: String,
+}
+
+#[get("/experience")]
+pub async fn get_experince(req: HttpRequest) -> impl Responder {
+    log_incoming(req, "GET", "/experience");
+    let raw_yaml: String = fs::read_to_string("/database/experience.yaml").unwrap();
+    let read_yaml: Result<TypeExp, _> = serde_yaml_bw::from_str(&raw_yaml);
+
+    let parsed_yaml = read_yaml.unwrap_or(TypeExp {
+        experience_jobs: Vec::new(),
+        experience_vol: Vec::new(),
+    });
+
+    web::Json(json!({
+    "body": {
+            "EXPERIENCE_JOBS": parsed_yaml.experience_jobs,
+            "EXPERIENCE_VOL": parsed_yaml.experience_vol
+        }
+    }))
+}
