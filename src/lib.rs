@@ -37,6 +37,7 @@ struct TechDes {
     tech_logo: String,
     project_site: String,
     skill_level: u8,
+    #[serde(default)]
     tech_cat: Vec<String>,
 }
 
