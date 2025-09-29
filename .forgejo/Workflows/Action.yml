@@ -17,7 +17,7 @@ on:
 # jobs run in parallel by default (we can change that).
 # each job groups together a series of steps to accomplish a purpose.
 jobs:
-  Dockerhub:
+  deploy:
     runs-on: ubuntu
     # if: ${{ github.ref == 'refs/heads/master' || github.event.pull_request.merged == true }} # Runs if it's a push to 'main' or a merged PR to 'main'
     steps:
