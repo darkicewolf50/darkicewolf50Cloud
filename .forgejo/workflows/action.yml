@@ -41,8 +41,8 @@ jobs:
           password: ${{ secrets.FORGEJO_REGISTRY_TOKEN }}
         id: forgejo-login
       
-      - name: Set DOCKER_HOST
-        run: echo "DOCKER_HOST=tcp://docker:2375" >> $GITHUB_ENV
+      #- name: Set DOCKER_HOST
+       # run: echo "DOCKER_HOST=tcp://docker:2375" >> $GITHUB_ENV
 
       - name: build container image # build the container
         run: docker compose build --no-cache
