@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu
     # if: ${{ github.ref == 'refs/heads/master' || github.event.pull_request.merged == true }} # Runs if it's a push to 'main' or a merged PR to 'main'
     steps:
-      - name: checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: test bookworm speed
