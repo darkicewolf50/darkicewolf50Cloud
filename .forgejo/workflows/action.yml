@@ -24,8 +24,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-        - name: Test Docker access
-          run: docker info
+      - name: Test Docker access
+        run: docker info
 
         # log into docker hub
       - name: Login to Dockerhub 
