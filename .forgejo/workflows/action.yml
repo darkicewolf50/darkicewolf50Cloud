@@ -21,11 +21,11 @@ jobs:
     runs-on: ubuntu
     # if: ${{ github.ref == 'refs/heads/master' || github.event.pull_request.merged == true }} # Runs if it's a push to 'main' or a merged PR to 'main'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Test Docker access
         run: docker info
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
         # log into docker hub
       - name: Login to Dockerhub 
