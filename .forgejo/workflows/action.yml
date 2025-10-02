@@ -24,8 +24,8 @@ jobs:
       - name: Test Docker Version
         run: docker --version
 
-      - name: Test Docker access
-        run: docker info
+      #- name: Test Docker access
+      #  run: docker info
 
       - name: Checkout repository
         uses: actions/checkout@v4
