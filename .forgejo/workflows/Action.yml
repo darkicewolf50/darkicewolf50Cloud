@@ -21,11 +21,6 @@ jobs:
     runs-on: ubuntu
     # if: ${{ github.ref == 'refs/heads/master' || github.event.pull_request.merged == true }} # Runs if it's a push to 'main' or a merged PR to 'main'
     steps:
-      - name: Test Docker Version
-        run: docker --version
-
-      #- name: Test Docker access
-      #  run: docker info
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,18 +53,20 @@ jobs:
         run: docker push darkicewolf50/darkicewolf50cloud:latest
         if: ${{ steps.docker-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
 
-      - name: Upload with Git SHA tag
+      - name: Upload to Dockerhub with Git SHA tag
         run: |
           docker tag darkicewolf50/darkicewolf50cloud:latest darkicewolf50/darkicewolf50cloud:${{ github.sha }}
           docker push darkicewolf50/darkicewolf50cloud:${{ github.sha }}
-        
-        
-      - name: Push to Forgejo Registry (latest + SHA)
-        run: |
-          docker tag darkicewolf50/darkicewolf50cloud:latest forgejo.example.com/darkicewolf50/darkicewolf50cloud:latest
-          docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:latest
+        if: ${{ steps.docker-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
 
-          docker tag darkicewolf50/darkicewolf50cloud:latest forgejo.example.com/darkicewolf50/darkicewolf50cloud:${{ github.sha }}
+      - name: Upload to Forgejo
+        run: docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:latest
+        if: ${{ steps.forgejo-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
+
+      - name: Upload to Forgejo with Git SHA tag
+        run: |
+          docker tag darkicewolf50/darkicewolf50cloud:latest forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:${{ github.sha }}
           docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:${{ github.sha }}
         if: ${{ steps.forgejo-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
+      
 

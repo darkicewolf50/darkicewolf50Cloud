@@ -21,27 +21,52 @@ jobs:
     runs-on: ubuntu
     # if: ${{ github.ref == 'refs/heads/master' || github.event.pull_request.merged == true }} # Runs if it's a push to 'main' or a merged PR to 'main'
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: test bookworm speed
-        run: ls
-      #- name: Login to Dockerhub # log into docker hub
-      #  uses: docker/login-action@v2
-       # with:
-        #  username: ${{ secrets.DOCKER_USERNAME }} # Using secret for Docker username
-         # password: ${{ secrets.DOCKER_PASSWORD }} # Using secret for Docker password
-       # id: docker-login
+        # log into docker hub
+      - name: Login to Dockerhub 
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }} # Using secret for Docker username
+          password: ${{ secrets.DOCKER_PASSWORD }} # Using secret for Docker password
+        id: docker-login
+      
+        # Login to Forgejo registry
+      - name: Login to Forgejo Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: forge.ucalgarybaja.ca
+          username: ${{ secrets.FORGEJO_REGISTRY_USER }}
+          password: ${{ secrets.FORGEJO_REGISTRY_TOKEN }}
+        id: forgejo-login
+      
+      #- name: Set DOCKER_HOST
+       # run: echo "DOCKER_HOST=tcp://docker:2375" >> $GITHUB_ENV
 
-    #  - name: build container image # build the container
-     #   run: docker compose build --no-cache
-    #    id: docker-build
+      - name: build container image # build the container
+        run: docker compose build --no-cache
+        id: docker-build
 
-    #  - name: Upload to Dockerhub
-     #   run: docker push darkicewolf50/darkicewolf50cloud:latest
-     #   if: ${{ steps.docker-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
+      - name: Upload to Dockerhub
+        run: docker push darkicewolf50/darkicewolf50cloud:latest
+        if: ${{ steps.docker-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
 
-   #   - name: Upload with Git SHA tag
-     #   run: |
-      #    docker tag darkicewolf50/darkicewolf50cloud:latest darkicewolf50/darkicewolf50cloud:${{ github.sha }}
-      #    docker push darkicewolf50/darkicewolf50cloud:${{ github.sha }}
+      - name: Upload to Dockerhub with Git SHA tag
+        run: |
+          docker tag darkicewolf50/darkicewolf50cloud:latest darkicewolf50/darkicewolf50cloud:${{ github.sha }}
+          docker push darkicewolf50/darkicewolf50cloud:${{ github.sha }}
+        if: ${{ steps.docker-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
+
+      - name: Upload to Forgejo
+        run: docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:latest
+        if: ${{ steps.forgejo-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
+
+      - name: Upload to Forgejo with Git SHA tag
+        run: |
+          docker tag darkicewolf50/darkicewolf50cloud:latest forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:${{ github.sha }}
+          docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:${{ github.sha }}
+        if: ${{ steps.forgejo-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
+      
+
