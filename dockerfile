@@ -1,5 +1,5 @@
 # ----------- Build Stage -----------
-FROM rust:1.87-slim AS builder
+FROM rust:slim AS builder
 
 WORKDIR /darkicewolf50_cloud
     
