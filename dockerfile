@@ -1,24 +1,24 @@
 # ----------- Build Stage -----------
-FROM rust:slim AS builder
+FROM rust:alpine AS builder
 
 WORKDIR /darkicewolf50_cloud
     
 # Install build dependencies
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
-    
+RUN apk add --no-cache pkgconfig musl-dev
+
 # Copy source and build
 COPY . .
 RUN cargo build --release
     
 # ----------- Runtime Stage -----------
-FROM debian:bookworm-slim
+FROM alpine:latest
     
-# Install runtime dependencies (e.g., for OpenSSL if needed)
-RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies
+RUN apk add --no-cache pkgconfig musl-dev
     
 WORKDIR /darkicewolf50_cloud
 COPY --from=builder /darkicewolf50_cloud/target/release/darkicewolf50_cloud .
     
-EXPOSE 8000
+EXPOSE 5050
 CMD ["./darkicewolf50_cloud"]
     
