@@ -59,16 +59,15 @@ jobs:
           docker push darkicewolf50/darkicewolf50cloud:${{ github.sha }}
         if: ${{ steps.docker-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
 
-      - name: Upload to Forgejo
-        run: |
-          docker tag darkicewolf50/darkicewolf50cloud:latest forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:latest
-          docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:latest
-        if: ${{ steps.forgejo-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
-
       - name: Upload to Forgejo with Git SHA tag
         run: |
           docker tag darkicewolf50/darkicewolf50cloud:latest forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:${{ github.sha }}
           docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:${{ github.sha }}
         if: ${{ steps.forgejo-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
       
+      - name: Upload to Forgejo
+        run: |
+          docker tag darkicewolf50/darkicewolf50cloud:latest forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:latest
+          docker push forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50cloud:latest
+        if: ${{ steps.forgejo-login.outcome == 'success' && steps.docker-build.outcome == 'success' }}
 
