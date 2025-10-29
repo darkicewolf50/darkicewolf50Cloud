@@ -1,35 +1,12 @@
-use actix_web::{HttpRequest, Responder, get, web};
+use actix_web::{Responder, get, web};
 // use actix_web::HttpResponse;
+use comrak::{Options, markdown_to_html};
+use darkicewolf50_actix_setup::{clean_user_file_req, log_incoming};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_yaml_bw;
 use std::{fs, path::Path};
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
-
-pub fn log_incoming(req: HttpRequest, method: &'static str, path_source: &str) {
-    let peer_addr = req.peer_addr();
-    if let Some(ip_addr_other) = peer_addr {
-        println!(
-            "{} request from: {}, subaddress: {}",
-            method, ip_addr_other, path_source
-        );
-    } else {
-        println!(
-            "{} request from: unknown, subaddress: {}",
-            method, path_source
-        );
-    }
-}
-
-#[get("/")]
-pub async fn hello(req: HttpRequest) -> impl Responder {
-    log_incoming(req, "GET", "/");
-    web::Json(json!({
-    "body": {
-            "message": "Hello I am alive, this does nothing"
-        }
-    }))
-}
 
 #[derive(Deserialize, Serialize, Debug)]
 struct TechDes {
@@ -42,8 +19,8 @@ struct TechDes {
 }
 
 #[get("/skills")]
-pub async fn skills_home(req: HttpRequest) -> impl Responder {
-    log_incoming(req, "GET", "/skills");
+pub async fn skills_home() -> impl Responder {
+    log_incoming("GET", "/skills");
     let raw_yaml: String = fs::read_to_string("/database/skill_level.yaml").unwrap();
     // .expect("Cannot open file or missing file.");
     let vec_yaml: Vec<TechDes> = serde_yaml_bw::from_str(&raw_yaml).unwrap_or_else(|_| vec![]);
@@ -64,8 +41,8 @@ struct ProjectDes {
 }
 
 #[get("/projects/{num_limit}")]
-pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responder {
-    log_incoming(req, "GET", "/projects/{num_limit}");
+pub async fn project(limit: web::Path<usize>) -> impl Responder {
+    log_incoming("GET", "/projects/{num_limit}");
 
     let limit = limit.into_inner();
 
@@ -92,15 +69,22 @@ struct BlogContent {
 
 // {how_many} how_many: {}  how_many,
 #[get("/blog/{blog_name}")]
-pub async fn get_blog(
-    blog_name: web::Path<String>,
-    // how_many: web::Path<i32>,
-    req: HttpRequest,
-) -> impl Responder {
-    log_incoming(req, "GET", "/blogs/blog/{blog_name}");
+pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
+    log_incoming("GET", "/blogs/blog/{blog_name}");
+
     let blog_name = blog_name.into_inner();
-    let file_path = format!("/blogs/{}.md", blog_name);
-    let path = Path::new(&file_path);
+    let path = match clean_user_file_req("/blogs", &blog_name, "md") {
+        Ok(p) => p,
+        Err(_) => {
+            return web::Json(BlogContent {
+                blog_file_name: String::new(),
+                date_last_edit: "9999-12-01".to_string(),
+                blog_title: "Not Found".to_string(),
+                tags: vec!["#error".to_string()],
+                html_blog_content: "<p>Blog not found</p>".to_string(),
+            });
+        }
+    };
 
     let Ok(blog_text) = fs::read_to_string(&path) else {
         return web::Json(BlogContent {
@@ -132,12 +116,12 @@ pub async fn get_blog(
     let markdown_content: String = blog_lines.collect::<Vec<_>>().join("\n");
 
     // Allow, images and embeds
-    let mut options = comrak::ComrakOptions::default();
+    let mut options = Options::default();
     options.parse.smart = true;
-    options.render.unsafe_ = true;
+    options.render.r#unsafe = true;
 
-    let html_blog = comrak::markdown_to_html(&markdown_content, &options);
-    let date_last_edit = get_date_modified(path).unwrap_or_else(|| "".to_string());
+    let html_blog = markdown_to_html(&markdown_content, &options);
+    let date_last_edit = get_date_modified(&path).unwrap_or_else(|| "".to_string());
 
     web::Json(BlogContent {
         blog_file_name: blog_name,
@@ -149,8 +133,8 @@ pub async fn get_blog(
 }
 
 #[get("/{num_limit}/{page_num}")]
-pub async fn get_blogs_preview(props: web::Path<(u8, u32)>, req: HttpRequest) -> impl Responder {
-    log_incoming(req, "GET", "blogs/{num_limit}/{page_num}");
+pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
+    log_incoming("GET", "blogs/{num_limit}/{page_num}");
 
     let (num_limit, page_num) = props.into_inner();
 
@@ -257,8 +241,8 @@ struct ExpDes {
 }
 
 #[get("/experience")]
-pub async fn get_experince(req: HttpRequest) -> impl Responder {
-    log_incoming(req, "GET", "/experience");
+pub async fn get_experince() -> impl Responder {
+    log_incoming("GET", "/experience");
     let raw_yaml: String = fs::read_to_string("/database/experience.yaml").unwrap();
     let read_yaml: Result<TypeExp, _> = serde_yaml_bw::from_str(&raw_yaml);
 
