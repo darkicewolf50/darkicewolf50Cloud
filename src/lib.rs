@@ -8,10 +8,10 @@ use serde_yaml_bw;
 use std::{fs, path::Path};
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
 
-#[cfg(debug_assertions)]
+#[cfg(feature = "swagger")]
 pub use swagger_docs::ApiDoc;
 
-#[cfg(debug_assertions)]
+#[cfg(feature = "swagger")]
 #[allow(dead_code)]
 pub mod swagger_docs;
 

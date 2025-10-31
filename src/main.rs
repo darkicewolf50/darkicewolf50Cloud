@@ -3,11 +3,11 @@ use actix_web::{App, HttpServer, web};
 use darkicewolf50_actix_setup::health_check;
 use darkicewolf50_cloud::{get_blog, get_blogs_preview, get_experince, project, skills_home};
 
-#[cfg(debug_assertions)]
+#[cfg(feature = "swagger")]
 use darkicewolf50_cloud::swagger_docs::ApiDoc;
-#[cfg(debug_assertions)]
+#[cfg(feature = "swagger")]
 use utoipa::OpenApi;
-#[cfg(debug_assertions)]
+#[cfg(feature = "swagger")]
 use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
@@ -41,7 +41,7 @@ async fn main() -> std::io::Result<()> {
 
         // swagger ui only available in debug mode
         // available at the /swagger-ui route
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "swagger")]
         let app = app.service(
             SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()),
         );

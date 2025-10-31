@@ -12,12 +12,19 @@ comrak = "0.47.0"
 time = { version = "0.3.44", features = ["serde"] }
 actix-cors = "0.7.1"
 serde_yaml_bw = "2.4.1"
-darkicewolf50-actix-setup = { version = "0.1.4", git = "https://forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50-actix-setup.git", features = [
-    "debug"
-] }
+darkicewolf50-actix-setup = { version = "0.1.4", git = "https://forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50-actix-setup.git", optional = true }
 # not compiled into final binary
-utoipa = "5.4.0"
-utoipa-swagger-ui = { version = "9", features = ["actix-web", "reqwest"] }
+utoipa = { version = "5.4.0", optional = true }
+utoipa-swagger-ui = { version = "9", optional = true }
+
+[features]
+default = ["darkicewolf50-actix-setup"]
+swagger = [
+    "utoipa",
+    "utoipa-swagger-ui/actix-web",
+    "utoipa-swagger-ui/reqwest",
+    "darkicewolf50-actix-setup/debug"
+]
 
 [profile.release]
 debug = false

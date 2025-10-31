@@ -11,3 +11,9 @@ This is a mirror of the repo, live code is hosted [here](https://forge.ucalgaryb
 I do not consent for this code to be used in any training data for AI or AI like products or services.
 
 This is only uploaded here so that I can bet those sweet sweet green marks on my gituhb profile.
+
+Run locally command
+
+```bash
+cargo watch -w src -x run --features=swagger
+```
