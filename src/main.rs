@@ -39,14 +39,13 @@ async fn main() -> std::io::Result<()> {
 
         // swagger ui only available in debug mode
         // available at the /swagger-ui route
-        if cfg!(debug_assertions) {
-            app.service(
-                SwaggerUi::new("/swagger-ui/{_:.*}")
-                    .url("/api-docs/openapi.json", ApiDoc::openapi()),
-            )
-        } else {
-            app
-        }
+        #[cfg(debug_assertions)]
+        let app = app.service(
+            SwaggerUi::new("/swagger-ui/{_:.*}")
+                .url("/api-docs/openapi.json", ApiDoc::openapi()),
+        );
+            
+        app
     })
     .bind(("0.0.0.0", 5050))?
     .run()
