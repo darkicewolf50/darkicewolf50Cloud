@@ -5,6 +5,7 @@ use darkicewolf50_actix_setup::health_check;
 use darkicewolf50_cloud::ApiDoc;
 use darkicewolf50_cloud::{get_blog, get_blogs_preview, get_experince, project, skills_home};
 use utoipa::OpenApi;
+#[cfg(debug_assertions)]
 use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
@@ -24,9 +25,6 @@ async fn main() -> std::io::Result<()> {
                                          //.supports_credentials()
             )
             .service(health_check)
-            // .service(echo)
-            // .service(resend)
-            // .route("/hey", web::get().to(manual_hello))
             .service(project)
             .service(
                 web::scope("/blogs")
@@ -40,6 +38,7 @@ async fn main() -> std::io::Result<()> {
             );
 
         // swagger ui only available in debug mode
+        // available at the /swagger-ui route
         if cfg!(debug_assertions) {
             app.service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
