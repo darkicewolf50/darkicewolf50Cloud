@@ -7,28 +7,45 @@ use serde_json::json;
 use serde_yaml_bw;
 use std::{fs, path::Path};
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
+use utoipa::{OpenApi, ToSchema};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(OpenApi)]
+#[openapi(paths(get_blog, get_blogs_preview, get_experince, project, skills_home))]
+pub struct ApiDoc;
+
+#[derive(Deserialize, Serialize, Debug, ToSchema)]
 struct TechDes {
+    #[schema(example = "Rust")]
     tech_name: String,
+    #[schema(example = "https://picsum.photos/200")]
     tech_logo: String,
+    #[schema(example = "https://www.rust-lang.org")]
     project_site: String,
+    #[schema(example = 50, minimum = 0, maximum = 255)]
     skill_level: u8,
+    #[schema(example = json!(["Backend"]))]
     #[serde(default)]
     tech_cat: Vec<String>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/skills",
+    responses(
+        (status = 200, description = "Skill info, using the TechDes schema", body = [TechDes])
+    )
+)]
 #[get("/skills")]
 pub async fn skills_home() -> impl Responder {
     log_incoming("GET", "/skills");
-    let raw_yaml: String = fs::read_to_string("/database/skill_level.yaml").unwrap();
+    let raw_yaml: String = fs::read_to_string("./database/skill_level.yaml").unwrap();
     // .expect("Cannot open file or missing file.");
     let vec_yaml: Vec<TechDes> = serde_yaml_bw::from_str(&raw_yaml).unwrap_or_else(|_| vec![]);
 
     web::Json(vec_yaml)
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 struct ProjectDes {
     project_name: String,
     website_link: Option<String>,
@@ -40,13 +57,23 @@ struct ProjectDes {
     project_des: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/projects/{num_limit}",
+    params(
+        ("num_limit" = usize, Path, description = "Number of projects to return, 0 for all")
+    ),
+    responses(
+        (status = 200, description = "Project info, using the ProjectDes schema", body = [ProjectDes])
+    )
+)]
 #[get("/projects/{num_limit}")]
 pub async fn project(limit: web::Path<usize>) -> impl Responder {
     log_incoming("GET", "/projects/{num_limit}");
 
     let limit = limit.into_inner();
 
-    let raw_yaml: String = fs::read_to_string("/database/projects.yaml").unwrap();
+    let raw_yaml: String = fs::read_to_string("./database/projects.yaml").unwrap();
     let vec_yaml: Vec<ProjectDes> = serde_yaml_bw::from_str(&raw_yaml).unwrap_or_else(|_| vec![]);
 
     let res_vec: Vec<ProjectDes> = if limit == 0 || limit >= vec_yaml.len() {
@@ -58,7 +85,7 @@ pub async fn project(limit: web::Path<usize>) -> impl Responder {
     web::Json(res_vec)
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, ToSchema)]
 struct BlogContent {
     pub blog_file_name: String,
     pub date_last_edit: String,
@@ -67,13 +94,22 @@ struct BlogContent {
     pub html_blog_content: String,
 }
 
-// {how_many} how_many: {}  how_many,
+#[utoipa::path(
+    get,
+    path = "/blogs/blog/{blog_name}",
+    params(
+        ("blog_name" = String, Path, description = "Name of the blog to retrieve")
+    ),
+    responses(
+        (status = 200, description = "Blog Content, using the BlogContent schema", body = [BlogContent])
+    )
+)]
 #[get("/blog/{blog_name}")]
 pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
     log_incoming("GET", "/blogs/blog/{blog_name}");
 
     let blog_name = blog_name.into_inner();
-    let path = match clean_user_file_req("/blogs", &blog_name, "md") {
+    let path = match clean_user_file_req("./blogs", &blog_name, "md") {
         Ok(p) => p,
         Err(_) => {
             return web::Json(BlogContent {
@@ -132,6 +168,17 @@ pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
     })
 }
 
+#[utoipa::path(
+    get,
+    path = "/blogs/{num_limit}/{page_num}",
+    params(
+        ("num_limit" = u8, Path, description = "Number of blogs to get"),
+        ("page_num" = u32, Path, description = "What multiple of that to get")
+    ),
+    responses(
+        (status = 200, description = "Blog Preview, using the BlogPreview schema", body = [BlogContent])
+    )
+)]
 #[get("/{num_limit}/{page_num}")]
 pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
     log_incoming("GET", "blogs/{num_limit}/{page_num}");
@@ -223,7 +270,7 @@ fn get_date_modified(path: &Path) -> Option<String> {
 //     }
 // }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 struct TypeExp {
     #[serde(rename = "EXPERIENCE_JOBS")]
     experience_jobs: Vec<ExpDes>,
@@ -231,7 +278,7 @@ struct TypeExp {
     experience_vol: Vec<ExpDes>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 struct ExpDes {
     pub postition: String,
     pub company: String,
@@ -240,6 +287,14 @@ struct ExpDes {
     pub end_month: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/experience",
+
+    responses(
+        (status = 200, description = "Experience of what I hafve done for work, using the TypeExp schema", body = [TypeExp])
+    )
+)]
 #[get("/experience")]
 pub async fn get_experince() -> impl Responder {
     log_incoming("GET", "/experience");

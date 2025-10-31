@@ -1,7 +1,11 @@
-# Morphgenics
+For development here is a great command
 
-#test #test2 #hi
+```bash
+cargo watch -w src -x run
+```
 
-This is just for fun and should noty be taken seriously
+```bash
+cargo install cargo-watch
+```
 
-haha I made you click on this link
+Install Here [cargo-watch](https://github.com/watchexec/cargo-watch)
