@@ -25,13 +25,6 @@ struct TechDes {
     tech_cat: Vec<String>,
 }
 
-#[utoipa::path(
-    get,
-    path = "/skills",
-    responses(
-        (status = 200, description = "Skill info, using the TechDes schema", body = [crate::swagger_docs::_TechDes])
-    )
-)]
 #[get("/skills")]
 pub async fn skills_home() -> impl Responder {
     log_incoming("GET", "/skills");
