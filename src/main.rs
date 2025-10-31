@@ -1,9 +1,11 @@
 use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
-
 use darkicewolf50_actix_setup::health_check;
-use darkicewolf50_cloud::ApiDoc;
 use darkicewolf50_cloud::{get_blog, get_blogs_preview, get_experince, project, skills_home};
+
+#[cfg(debug_assertions)]
+use darkicewolf50_cloud::swagger_docs::ApiDoc;
+#[cfg(debug_assertions)]
 use utoipa::OpenApi;
 #[cfg(debug_assertions)]
 use utoipa_swagger_ui::SwaggerUi;
@@ -41,10 +43,9 @@ async fn main() -> std::io::Result<()> {
         // available at the /swagger-ui route
         #[cfg(debug_assertions)]
         let app = app.service(
-            SwaggerUi::new("/swagger-ui/{_:.*}")
-                .url("/api-docs/openapi.json", ApiDoc::openapi()),
+            SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()),
         );
-            
+
         app
     })
     .bind(("0.0.0.0", 5050))?

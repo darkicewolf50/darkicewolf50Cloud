@@ -7,23 +7,20 @@ use serde_json::json;
 use serde_yaml_bw;
 use std::{fs, path::Path};
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
-use utoipa::{OpenApi, ToSchema};
 
-#[derive(OpenApi)]
-#[openapi(paths(get_blog, get_blogs_preview, get_experince, project, skills_home))]
-pub struct ApiDoc;
+#[cfg(debug_assertions)]
+pub use swagger_docs::ApiDoc;
 
-#[derive(Deserialize, Serialize, Debug, ToSchema)]
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
+pub mod swagger_docs;
+
+#[derive(Deserialize, Serialize, Debug)]
 struct TechDes {
-    #[schema(example = "Rust")]
     tech_name: String,
-    #[schema(example = "https://picsum.photos/200")]
     tech_logo: String,
-    #[schema(example = "https://www.rust-lang.org")]
     project_site: String,
-    #[schema(example = 50, minimum = 0, maximum = 255)]
     skill_level: u8,
-    #[schema(example = json!(["Backend"]))]
     #[serde(default)]
     tech_cat: Vec<String>,
 }
@@ -32,7 +29,7 @@ struct TechDes {
     get,
     path = "/skills",
     responses(
-        (status = 200, description = "Skill info, using the TechDes schema", body = [TechDes])
+        (status = 200, description = "Skill info, using the TechDes schema", body = [crate::swagger_docs::_TechDes])
     )
 )]
 #[get("/skills")]
@@ -45,7 +42,7 @@ pub async fn skills_home() -> impl Responder {
     web::Json(vec_yaml)
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 struct ProjectDes {
     project_name: String,
     website_link: Option<String>,
@@ -57,16 +54,6 @@ struct ProjectDes {
     project_des: String,
 }
 
-#[utoipa::path(
-    get,
-    path = "/projects/{num_limit}",
-    params(
-        ("num_limit" = usize, Path, description = "Number of projects to return, 0 for all")
-    ),
-    responses(
-        (status = 200, description = "Project info, using the ProjectDes schema", body = [ProjectDes])
-    )
-)]
 #[get("/projects/{num_limit}")]
 pub async fn project(limit: web::Path<usize>) -> impl Responder {
     log_incoming("GET", "/projects/{num_limit}");
@@ -85,7 +72,7 @@ pub async fn project(limit: web::Path<usize>) -> impl Responder {
     web::Json(res_vec)
 }
 
-#[derive(Deserialize, Serialize, Debug, ToSchema)]
+#[derive(Deserialize, Serialize, Debug)]
 struct BlogContent {
     pub blog_file_name: String,
     pub date_last_edit: String,
@@ -94,16 +81,6 @@ struct BlogContent {
     pub html_blog_content: String,
 }
 
-#[utoipa::path(
-    get,
-    path = "/blogs/blog/{blog_name}",
-    params(
-        ("blog_name" = String, Path, description = "Name of the blog to retrieve")
-    ),
-    responses(
-        (status = 200, description = "Blog Content, using the BlogContent schema", body = [BlogContent])
-    )
-)]
 #[get("/blog/{blog_name}")]
 pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
     log_incoming("GET", "/blogs/blog/{blog_name}");
@@ -168,17 +145,6 @@ pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
     })
 }
 
-#[utoipa::path(
-    get,
-    path = "/blogs/{num_limit}/{page_num}",
-    params(
-        ("num_limit" = u8, Path, description = "Number of blogs to get"),
-        ("page_num" = u32, Path, description = "What multiple of that to get")
-    ),
-    responses(
-        (status = 200, description = "Blog Preview, using the BlogPreview schema", body = [BlogContent])
-    )
-)]
 #[get("/{num_limit}/{page_num}")]
 pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
     log_incoming("GET", "blogs/{num_limit}/{page_num}");
@@ -270,7 +236,7 @@ fn get_date_modified(path: &Path) -> Option<String> {
 //     }
 // }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize)]
 struct TypeExp {
     #[serde(rename = "EXPERIENCE_JOBS")]
     experience_jobs: Vec<ExpDes>,
@@ -278,7 +244,7 @@ struct TypeExp {
     experience_vol: Vec<ExpDes>,
 }
 
-#[derive(Debug, Deserialize, Serialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize)]
 struct ExpDes {
     pub postition: String,
     pub company: String,
@@ -287,14 +253,6 @@ struct ExpDes {
     pub end_month: String,
 }
 
-#[utoipa::path(
-    get,
-    path = "/experience",
-
-    responses(
-        (status = 200, description = "Experience of what I hafve done for work, using the TypeExp schema", body = [TypeExp])
-    )
-)]
 #[get("/experience")]
 pub async fn get_experince() -> impl Responder {
     log_incoming("GET", "/experience");
