@@ -56,4 +56,4 @@ Disallow: /
 # END Cloudflare Managed Content
 
 User-agent: *
-Disallow: /blogs/
+Disallow: /

@@ -149,7 +149,7 @@ pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
     let (num_limit, page_num) = props.into_inner();
 
     let mut available_blogs: Vec<String> = Vec::new();
-    let dir = Path::new("/blogs");
+    let dir = Path::new("./blogs");
     if dir.is_dir() {
         for entry in fs::read_dir(dir).unwrap() {
             let entry = entry
@@ -253,7 +253,7 @@ struct ExpDes {
 #[get("/experience")]
 pub async fn get_experince() -> impl Responder {
     log_incoming("GET", "/experience");
-    let raw_yaml: String = fs::read_to_string("/database/experience.yaml").unwrap();
+    let raw_yaml: String = fs::read_to_string("./database/experience.yaml").unwrap();
     let read_yaml: Result<TypeExp, _> = serde_yaml_bw::from_str(&raw_yaml);
 
     let parsed_yaml = read_yaml.unwrap_or(TypeExp {
