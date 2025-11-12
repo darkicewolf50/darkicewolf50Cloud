@@ -1,4 +1,5 @@
-use actix_web::{Responder, get, web};
+use actix_files::NamedFile;
+use actix_web::{HttpResponse, Responder, get, web};
 // use actix_web::HttpResponse;
 use comrak::{Options, markdown_to_html};
 use darkicewolf50_actix_setup::{clean_user_file_req, log_incoming};
@@ -123,7 +124,10 @@ pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
 
     // Allow, images and embeds
     let mut options = Options::default();
+    options.extension.table = true; // Enable GitHub-style tables
+    options.extension.strikethrough = true; // Enable strikethrough
     options.parse.smart = true;
+    options.render.github_pre_lang = true;
     options.render.r#unsafe = true;
 
     let html_blog = markdown_to_html(&markdown_content, &options);
@@ -263,4 +267,33 @@ pub async fn get_experince() -> impl Responder {
             "EXPERIENCE_VOL": parsed_yaml.experience_vol
         }
     }))
+}
+
+#[get("/{static_file}")]
+pub async fn get_static_file(
+    static_file: web::Path<String>,
+) -> actix_web::Either<actix_web::Result<NamedFile>, HttpResponse> {
+    log_incoming("GET", "/static_file");
+
+    let file_string = static_file.into_inner();
+    let mut file_parts = file_string.rsplitn(2, ".");
+    // let mut parts_iter = file_thing.rsplitn(2, '.');
+    let (file_ext, file_name) = match (file_parts.next(), file_parts.next()) {
+        (Some(ext), Some(name)) => (ext, name),
+        _ => {
+            return actix_web::Either::Right(
+                HttpResponse::BadRequest().body("Invalid file request"),
+            );
+        }
+    };
+
+    let file_path = match clean_user_file_req("./static", file_name, file_ext) {
+        Ok(path) => path,
+        Err(e) => return actix_web::Either::Right(e),
+    };
+
+    match NamedFile::open(&file_path) {
+        Ok(named_file) => actix_web::Either::Left(Ok(named_file)),
+        Err(_) => actix_web::Either::Right(HttpResponse::NotFound().finish()),
+    }
 }

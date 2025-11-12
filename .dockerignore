@@ -1,5 +1,6 @@
 database/
 blogs/
+static/
 .forgejo/
 .github/
 target/

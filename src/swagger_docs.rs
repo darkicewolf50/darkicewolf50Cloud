@@ -13,6 +13,7 @@ use utoipa::ToSchema;
     _get_experince,
     _project,
     _skills_home,
+    _get_static_file,
     darkicewolf50_actix_setup::swagger_docs::health_check_swagger
 ))]
 pub struct ApiDoc;
@@ -129,3 +130,17 @@ pub struct _ProjectDes {
     )
 )]
 pub async fn _project(_limit: web::Path<usize>) {}
+
+#[cfg(feature = "swagger")]
+#[utoipa::path(
+    get,
+    path = "/static/{static_file}",
+    params(
+        ("static_file" = String, Path, description = "Gets a file located on the backend server")
+    ),
+    responses(
+        (status = 200, description = "File served successfully", body = String, content_type = "application/octet-stream"),
+        (status = 400, description = "Invalid file request", body = String)
+    )
+)]
+pub async fn _get_static_file(_static_file: web::Path<String>) {}
