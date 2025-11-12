@@ -40,7 +40,10 @@ async fn main() -> std::io::Result<()> {
                     .service(skills_home)
                     .service(get_experince),
             )
-            .service(get_static_file);
+            .service(web::scope("/static").service(get_static_file))
+            .service(get_robots)
+            .service(get_favicon_ico)
+            .service(get_favicon_png);
 
         // swagger ui only available in debug mode
         // available at the /swagger-ui route
@@ -54,4 +57,25 @@ async fn main() -> std::io::Result<()> {
     .bind(("0.0.0.0", 5050))?
     .run()
     .await
+}
+
+#[actix_web::get("/robots.txt")]
+pub async fn get_robots() -> impl actix_web::Responder {
+    actix_files::NamedFile::open("./static/robots.txt")
+        .map(|f| f.use_last_modified(true))
+        .map_err(|_| actix_web::error::ErrorNotFound("robots.txt not found"))
+}
+
+#[actix_web::get("/favicon.ico")]
+pub async fn get_favicon_ico() -> impl actix_web::Responder {
+    actix_files::NamedFile::open("./static/favicon.ico")
+        .map(|f| f.use_last_modified(true))
+        .map_err(|_| actix_web::error::ErrorNotFound("favicon.ico not found"))
+}
+
+#[actix_web::get("/favicon.png")]
+pub async fn get_favicon_png() -> impl actix_web::Responder {
+    actix_files::NamedFile::open("./static/favicon.png")
+        .map(|f| f.use_last_modified(true))
+        .map_err(|_| actix_web::error::ErrorNotFound("favicon.png not found"))
 }
