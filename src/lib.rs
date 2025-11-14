@@ -6,7 +6,7 @@ use darkicewolf50_actix_setup::{clean_user_file_req, log_incoming};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_yaml_bw;
-use std::{fs, path::Path};
+use std::{fs, path::Path, sync::Arc};
 use time::{OffsetDateTime, format_description::well_known::Iso8601};
 
 #[cfg(feature = "swagger")]
@@ -16,14 +16,16 @@ pub use swagger_docs::ApiDoc;
 #[allow(dead_code)]
 pub mod swagger_docs;
 
+type ArcString = Arc<str>;
+
 #[derive(Deserialize, Serialize, Debug)]
 struct TechDes {
-    tech_name: String,
-    tech_logo: String,
-    project_site: String,
+    tech_name: ArcString,
+    tech_logo: ArcString,
+    project_site: ArcString,
     skill_level: u8,
     #[serde(default)]
-    tech_cat: Vec<String>,
+    tech_cat: Arc<[ArcString]>,
 }
 
 #[get("/skills")]
@@ -31,21 +33,23 @@ pub async fn skills_home() -> impl Responder {
     log_incoming("GET", "/skills");
     let raw_yaml: String = fs::read_to_string("./database/skill_level.yaml").unwrap();
     // .expect("Cannot open file or missing file.");
-    let vec_yaml: Vec<TechDes> = serde_yaml_bw::from_str(&raw_yaml).unwrap_or_else(|_| vec![]);
+    let vec_yaml: Arc<[TechDes]> = serde_yaml_bw::from_str(&raw_yaml)
+        .unwrap_or_else(|_| vec![])
+        .into();
 
     web::Json(vec_yaml)
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 struct ProjectDes {
-    project_name: String,
-    website_link: Option<String>,
-    github_link: Option<String>,
-    forgejo_link: Option<String>,
-    dockerhub_link: Option<String>,
-    project_img: Option<String>,
-    techs_used: Vec<String>,
-    project_des: String,
+    project_name: ArcString,
+    website_link: Option<ArcString>,
+    github_link: Option<ArcString>,
+    forgejo_link: Option<ArcString>,
+    dockerhub_link: Option<ArcString>,
+    project_img: Option<ArcString>,
+    techs_used: Arc<[ArcString]>,
+    project_des: ArcString,
 }
 
 #[get("/projects/{num_limit}")]
@@ -68,15 +72,15 @@ pub async fn project(limit: web::Path<usize>) -> impl Responder {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct BlogContent {
-    pub blog_file_name: String,
-    pub date_last_edit: String,
-    pub blog_title: String,
-    pub tags: Vec<String>,
-    pub html_blog_content: String,
+    pub blog_file_name: ArcString,
+    pub date_last_edit: ArcString,
+    pub blog_title: ArcString,
+    pub tags: Arc<[ArcString]>,
+    pub html_blog_content: ArcString,
 }
 
 #[get("/blog/{blog_name}")]
-pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
+pub async fn get_blog(blog_name: web::Path<ArcString>) -> impl Responder {
     log_incoming("GET", "/blogs/blog/{blog_name}");
 
     let blog_name = blog_name.into_inner();
@@ -84,31 +88,28 @@ pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
         Ok(p) => p,
         Err(_) => {
             return web::Json(BlogContent {
-                blog_file_name: String::new(),
-                date_last_edit: "9999-12-01".to_string(),
-                blog_title: "Not Found".to_string(),
-                tags: vec!["#error".to_string()],
-                html_blog_content: "<p>Blog not found</p>".to_string(),
+                blog_file_name: "".into(),
+                date_last_edit: "9999-12-01".into(),
+                blog_title: "Not Found".into(),
+                tags: vec!["#error".into()].into(),
+                html_blog_content: "<p>Blog not found</p>".into(),
             });
         }
     };
 
     let Ok(blog_text) = fs::read_to_string(&path) else {
         return web::Json(BlogContent {
-            blog_file_name: String::new(),
-            date_last_edit: "9999-12-01".to_string(),
-            blog_title: "Not Found".to_string(),
-            tags: vec!["#error".to_string()],
-            html_blog_content: "<p>Blog not found</p>".to_string(),
+            blog_file_name: "".into(),
+            date_last_edit: "9999-12-01".into(),
+            blog_title: "Not Found".into(),
+            tags: vec!["#error".into()].into(),
+            html_blog_content: "<p>Blog not found</p>".into(),
         });
     };
     let mut blog_lines = blog_text.lines();
 
     let raw_title = blog_lines.next().unwrap_or("").trim();
-    let blog_title = raw_title
-        .strip_prefix("# ")
-        .unwrap_or(raw_title)
-        .to_string();
+    let blog_title = raw_title.strip_prefix("# ").unwrap_or(raw_title);
 
     //consumes empty line
     blog_lines.next();
@@ -118,9 +119,9 @@ pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
         .trim()
         .to_string()
         .split_whitespace()
-        .map(|s| s.to_string())
+        .map(|s| s.into())
         .collect();
-    let markdown_content: String = blog_lines.collect::<Vec<_>>().join("\n");
+    let markdown_content: ArcString = blog_lines.collect::<Vec<_>>().join("\n").into();
 
     // Allow, images and embeds
     let mut options = Options::default();
@@ -130,12 +131,12 @@ pub async fn get_blog(blog_name: web::Path<String>) -> impl Responder {
     options.render.github_pre_lang = true;
     options.render.r#unsafe = true;
 
-    let html_blog = markdown_to_html(&markdown_content, &options);
-    let date_last_edit = get_date_modified(&path).unwrap_or_else(|| "".to_string());
+    let html_blog = markdown_to_html(&markdown_content, &options).into();
+    let date_last_edit = get_date_modified(&path).unwrap_or_else(|| "".into()).into();
 
     web::Json(BlogContent {
         blog_file_name: blog_name,
-        blog_title: blog_title,
+        blog_title: blog_title.into(),
         tags: tags,
         html_blog_content: html_blog,
         date_last_edit: date_last_edit,
@@ -181,10 +182,7 @@ pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
         let mut raw_blog = raw_blog_string.lines();
 
         let raw_title = raw_blog.next().unwrap_or("").trim();
-        let title = raw_title
-            .strip_prefix("# ")
-            .unwrap_or(raw_title)
-            .to_string();
+        let title = raw_title.strip_prefix("# ").unwrap_or(raw_title);
         raw_blog.next();
         let tags = raw_blog
             .next()
@@ -192,16 +190,17 @@ pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
             .trim()
             .to_string()
             .split_whitespace()
-            .map(|s| s.to_string())
+            .map(|s| s.into())
             .collect();
         raw_blog.next();
         let raw_blog_preview = format!("{}...", raw_blog.next().unwrap_or(""));
-        let blog_preview = comrak::markdown_to_html(&raw_blog_preview, &comrak::Options::default());
+        let blog_preview =
+            comrak::markdown_to_html(&raw_blog_preview, &comrak::Options::default()).into();
 
         blogs_preview.push(BlogContent {
-            blog_file_name: blog_info.strip_suffix(".md").unwrap().to_string(),
+            blog_file_name: blog_info.strip_suffix(".md").unwrap().into(),
             date_last_edit: date_last_edit,
-            blog_title: title,
+            blog_title: title.into(),
             tags: tags,
             html_blog_content: blog_preview,
         });
@@ -210,14 +209,14 @@ pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
     web::Json(serde_json::json!(blogs_preview))
 }
 
-fn get_date_modified(path: &Path) -> Option<String> {
+fn get_date_modified(path: &Path) -> Option<ArcString> {
     let metadata = fs::metadata(path).ok()?;
     let system_time = metadata.modified().ok()?;
     let offset_time = OffsetDateTime::from(system_time);
 
     // Format just the date part of ISO 8601 (e.g. "2025-05-15")
     let iso_string = offset_time.format(&Iso8601::DEFAULT).ok()?;
-    let date_only = iso_string.split('T').next()?.to_string();
+    let date_only = iso_string.split('T').next()?.into();
 
     Some(date_only)
 }
@@ -236,18 +235,18 @@ fn get_date_modified(path: &Path) -> Option<String> {
 #[derive(Debug, Deserialize)]
 struct TypeExp {
     #[serde(rename = "EXPERIENCE_JOBS")]
-    experience_jobs: Vec<ExpDes>,
+    experience_jobs: Arc<[ExpDes]>,
     #[serde(rename = "EXPERIENCE_VOL")]
-    experience_vol: Vec<ExpDes>,
+    experience_vol: Arc<[ExpDes]>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 struct ExpDes {
-    pub postition: String,
-    pub company: String,
-    pub location: String,
-    pub start_month: String,
-    pub end_month: String,
+    pub postition: ArcString,
+    pub company: ArcString,
+    pub location: ArcString,
+    pub start_month: ArcString,
+    pub end_month: ArcString,
 }
 
 #[get("/experience")]
@@ -257,8 +256,8 @@ pub async fn get_experince() -> impl Responder {
     let read_yaml: Result<TypeExp, _> = serde_yaml_bw::from_str(&raw_yaml);
 
     let parsed_yaml = read_yaml.unwrap_or(TypeExp {
-        experience_jobs: Vec::new(),
-        experience_vol: Vec::new(),
+        experience_jobs: Vec::new().into(),
+        experience_vol: Vec::new().into(),
     });
 
     web::Json(json!({
@@ -273,7 +272,7 @@ pub async fn get_experince() -> impl Responder {
 pub async fn get_static_file(
     static_file: web::Path<String>,
 ) -> actix_web::Either<actix_web::Result<NamedFile>, HttpResponse> {
-    log_incoming("GET", "/static_file");
+    log_incoming("GET", "/static/static_file");
 
     let file_string = static_file.into_inner();
     let mut file_parts = file_string.rsplitn(2, ".");
