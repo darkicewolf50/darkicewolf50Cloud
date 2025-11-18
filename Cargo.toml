@@ -4,7 +4,7 @@ version = "0.1.1"
 edition = "2024"
 
 [dependencies]
-actix-web = "4.11.0"
+actix-web = "4.12.0"
 actix-files = "0.6.8"
 actix-cors = "0.7.1"
 serde = { version = "1.0.228", features = ["derive", "rc"] }
@@ -12,8 +12,8 @@ serde_json = "1.0.145"
 serde_yaml_bw = "2.5.1"
 time = { version = "0.3.44", features = ["serde"] }
 reqwest = { version = "0.12.24", features = ["json"] }
-comrak = "0.47.0"
-darkicewolf50-actix-setup = { version = "0.1.4", git = "https://forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50-actix-setup.git", optional = true }
+comrak = "0.48.0"
+darkicewolf50-actix-setup = { version = "0.1.6", git = "https://forge.ucalgarybaja.ca/darkicewolf50/darkicewolf50-actix-setup.git", optional = true }
 # not compiled into final binary
 utoipa = { version = "5.4.0", optional = true }
 utoipa-swagger-ui = { version = "9", optional = true }

@@ -1,8 +1,8 @@
 use actix_files::NamedFile;
-use actix_web::{HttpResponse, Responder, get, web};
+use actix_web::{HttpRequest, HttpResponse, Responder, get, web};
 // use actix_web::HttpResponse;
 use comrak::{Options, markdown_to_html};
-use darkicewolf50_actix_setup::{clean_user_file_req, log_incoming};
+use darkicewolf50_actix_setup::{clean_user_file_req, log_incoming_w_x};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_yaml_bw;
@@ -29,8 +29,8 @@ struct TechDes {
 }
 
 #[get("/skills")]
-pub async fn skills_home() -> impl Responder {
-    log_incoming("GET", "/skills");
+pub async fn skills_home(req: HttpRequest) -> impl Responder {
+    log_incoming_w_x("GET", "/skills", req);
     let raw_yaml: String = fs::read_to_string("./database/skill_level.yaml").unwrap();
     // .expect("Cannot open file or missing file.");
     let vec_yaml: Arc<[TechDes]> = serde_yaml_bw::from_str(&raw_yaml)
@@ -53,8 +53,8 @@ struct ProjectDes {
 }
 
 #[get("/projects/{num_limit}")]
-pub async fn project(limit: web::Path<usize>) -> impl Responder {
-    log_incoming("GET", "/projects/{num_limit}");
+pub async fn project(limit: web::Path<usize>, req: HttpRequest) -> impl Responder {
+    log_incoming_w_x("GET", "/projects/{num_limit}", req);
 
     let limit = limit.into_inner();
 
@@ -80,8 +80,8 @@ struct BlogContent {
 }
 
 #[get("/blog/{blog_name}")]
-pub async fn get_blog(blog_name: web::Path<ArcString>) -> impl Responder {
-    log_incoming("GET", "/blogs/blog/{blog_name}");
+pub async fn get_blog(blog_name: web::Path<ArcString>, req: HttpRequest) -> impl Responder {
+    log_incoming_w_x("GET", "/blogs/blog/{blog_name}", req);
 
     let blog_name = blog_name.into_inner();
     let path = match clean_user_file_req("./blogs", &blog_name, "md") {
@@ -144,8 +144,8 @@ pub async fn get_blog(blog_name: web::Path<ArcString>) -> impl Responder {
 }
 
 #[get("/{num_limit}/{page_num}")]
-pub async fn get_blogs_preview(props: web::Path<(u8, u32)>) -> impl Responder {
-    log_incoming("GET", "blogs/{num_limit}/{page_num}");
+pub async fn get_blogs_preview(props: web::Path<(u8, u32)>, req: HttpRequest) -> impl Responder {
+    log_incoming_w_x("GET", "blogs/{num_limit}/{page_num}", req);
 
     let (num_limit, page_num) = props.into_inner();
 
@@ -250,8 +250,8 @@ struct ExpDes {
 }
 
 #[get("/experience")]
-pub async fn get_experince() -> impl Responder {
-    log_incoming("GET", "/experience");
+pub async fn get_experince(req: HttpRequest) -> impl Responder {
+    log_incoming_w_x("GET", "/experience", req);
     let raw_yaml: String = fs::read_to_string("./database/experience.yaml").unwrap();
     let read_yaml: Result<TypeExp, _> = serde_yaml_bw::from_str(&raw_yaml);
 
@@ -271,10 +271,11 @@ pub async fn get_experince() -> impl Responder {
 #[get("/{static_file}")]
 pub async fn get_static_file(
     static_file: web::Path<String>,
+    req: HttpRequest,
 ) -> actix_web::Either<actix_web::Result<NamedFile>, HttpResponse> {
-    log_incoming("GET", "/static/static_file");
-
     let file_string = static_file.into_inner();
+    log_incoming_w_x("GET", &format!("/static/static_file/{file_string}"), req);
+
     let mut file_parts = file_string.rsplitn(2, ".");
     // let mut parts_iter = file_thing.rsplitn(2, '.');
     let (file_ext, file_name) = match (file_parts.next(), file_parts.next()) {

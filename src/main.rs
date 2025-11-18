@@ -1,6 +1,6 @@
 use actix_cors::Cors;
-use actix_web::{App, HttpServer, web};
-use darkicewolf50_actix_setup::health_check;
+use actix_web::{App, HttpRequest, HttpServer, web};
+use darkicewolf50_actix_setup::{health_check, log_incoming_w_x};
 use darkicewolf50_cloud::{
     get_blog, get_blogs_preview, get_experince, get_static_file, project, skills_home,
 };
@@ -14,7 +14,14 @@ use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Running on http://localhost:5050/");
+    #[cfg(debug_assertions)]
+    {
+        println!("Running on http://localhost:5050/");
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        println!("Running on port 5050");
+    }
 
     HttpServer::new(|| {
         let app = App::new()
@@ -60,21 +67,24 @@ async fn main() -> std::io::Result<()> {
 }
 
 #[actix_web::get("/robots.txt")]
-pub async fn get_robots() -> impl actix_web::Responder {
+pub async fn get_robots(req: HttpRequest) -> impl actix_web::Responder {
+    log_incoming_w_x("GET", "/robots.txt", req);
     actix_files::NamedFile::open("./static/robots.txt")
         .map(|f| f.use_last_modified(true))
         .map_err(|_| actix_web::error::ErrorNotFound("robots.txt not found"))
 }
 
 #[actix_web::get("/favicon.ico")]
-pub async fn get_favicon_ico() -> impl actix_web::Responder {
+pub async fn get_favicon_ico(req: HttpRequest) -> impl actix_web::Responder {
+    log_incoming_w_x("GET", "/favicon.ico", req);
     actix_files::NamedFile::open("./static/favicon.ico")
         .map(|f| f.use_last_modified(true))
         .map_err(|_| actix_web::error::ErrorNotFound("favicon.ico not found"))
 }
 
 #[actix_web::get("/favicon.png")]
-pub async fn get_favicon_png() -> impl actix_web::Responder {
+pub async fn get_favicon_png(req: HttpRequest) -> impl actix_web::Responder {
+    log_incoming_w_x("GET", "/favicon.png", req);
     actix_files::NamedFile::open("./static/favicon.png")
         .map(|f| f.use_last_modified(true))
         .map_err(|_| actix_web::error::ErrorNotFound("favicon.png not found"))
