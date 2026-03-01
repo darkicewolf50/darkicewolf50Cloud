@@ -1,0 +1,6 @@
+[registries.darkicewolf50-forge]
+index = "sparse+https://forge.ucalgarybaja.ca/api/packages/darkicewolf50/cargo/" # Sparse index
+# index = "https://forge.ucalgarybaja.ca/darkicewolf50/_cargo-index.git" # Git
+
+[net]
+git-fetch-with-cli = true
