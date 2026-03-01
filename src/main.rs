@@ -1,6 +1,6 @@
 use actix_cors::Cors;
 use actix_web::{App, HttpRequest, HttpServer, web};
-use darkicewolf50_actix_setup::{health_check, log_incoming_w_x};
+use darkicewolf50_actix_setup::{health_check_reverse_proxy, log_incoming_w_x};
 use darkicewolf50_cloud::{
     get_blog, get_blogs_preview, get_experince, get_static_file, project, skills_home,
 };
@@ -35,7 +35,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_header(), // Optionally enable sending cookies, etc.
                                          //.supports_credentials()
             )
-            .service(health_check)
+            .service(health_check_reverse_proxy)
             .service(project)
             .service(
                 web::scope("/blogs")
